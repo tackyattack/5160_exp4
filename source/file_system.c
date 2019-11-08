@@ -1,6 +1,10 @@
+#include <stdio.h>
 #include "main.h"
 #include "sector_reader.h"
 #include "Directory_Functions_struct.h"
+#include "UART.h"
+#include "SPI.h"
+#include "print_bytes.h"
 #include "file_system.h"
 
 // Private constants (outside doesn't need to see these)
@@ -17,8 +21,6 @@
 #define BPB_RootClus_offset             (0x002C)
 
 
-
-
 uint8_t mount_drive(uint8_t xdata *xram_data_array)
 {
   uint8_t temp8, NumFAT;
@@ -33,7 +35,7 @@ uint8_t mount_drive(uint8_t xdata *xram_data_array)
 
   // Find the BIOS parameter block (BPB)
   printf("Finding BIOS parameter block\n");
-  read_sector(0, 512, data_array);
+  Read_Sector(0, 512, data_array);
   temp8 = read8(0, data_array); // check first byte
   MBR_RelSec = 0;
   if((temp8!=0xEB) && (temp8!=0xE9))
@@ -42,7 +44,7 @@ uint8_t mount_drive(uint8_t xdata *xram_data_array)
     // If we're in the MBR, then get the offset for the BPB
     MBR_RelSec = read32(MBR_BPB_sec_offset, data_array);
     // now read the start of BPB
-    read_sector(MBR_RelSec, 512, data_array);
+    Read_Sector(MBR_RelSec, 512, data_array);
     temp8 = read8(0, data_array);
   }
 
@@ -72,8 +74,8 @@ uint8_t mount_drive(uint8_t xdata *xram_data_array)
   RsvdSecCnt  = read16(BPB_RsvdSectorCount_offset, data_array);
   NumFAT      = read8(BPB_NumberFATs_offset, data_array);
   RootEntCnt  = read16(BPB_RootEntryCount_offset, data_array);
-  FATSz16     = read16(BPB_FATsize16_offset, data_array);
-  FATSz32     = read32(BPB_FATsize32_offset, data_array);
+  FATSz16     = read16(BPB_FATSz16_offset, data_array);
+  FATSz32     = read32(BPB_FATSz32_offset, data_array);
   RootClus    = read32(BPB_RootClus_offset, data_array);
 
 
@@ -159,7 +161,7 @@ uint32_t find_next_clus(uint32_t cluster_num, uint8_t xdata *xram_data_array)
 
   // FATtype will be either 2 (FAT16) or 4 (FAT32)
   sector = ((cluster_num*drive_values->FATtype)/drive_values->BytesPerSec) + drive_values->StartofFAT;
-  read_sector(sector, drive_values->BytesPerSec, data_array);
+  Read_Sector(sector, drive_values->BytesPerSec, data_array);
 
   // Determine the offset of the cluster within this sector
   FAToffset = (uint16_t)((cluster_num*drive_values->FATtype)%(drive_values->BytesPerSec));
@@ -214,14 +216,17 @@ void print_file(uint32_t cluster_num, uint8_t xdata *xram_data_array)
 
       // read the sector in
       Read_Sector((base_sector+sector_offset), drive_values->BytesPerSec, data_array);
-      print_memory(drive_values->BytesPerSec, data_array);
+
+
+      printf(" **** cluster: %lu   sector: %lu ****\n", cluster_num, base_sector+sector_offset);
+      print_memory(data_array, drive_values->BytesPerSec);
 
       sector_offset++; // go forward one sector
 
       // check if we need to go to the next cluster
       if(sector_offset == drive_values->BytesPerSec)
       {
-        clus = find_next_clus(clus, data_array);
+        cluster_num = find_next_clus(cluster_num, data_array);
         sector_offset = 0;
       }
 

@@ -3,12 +3,21 @@
 #include "PORT.H"
 #include "Directory_Functions_struct.h"
 #include "file_system.h"
+#include "LED_Control.h"
+#include "SPI.h"
+#include "SDCard.h"
+#include "print_bytes.h"
+#include "Timer0_hardware_delay_1ms.h"
+#include "UART.h"
+#include "LCD_Routines.h"
+#include "Long_Serial_In.h"
 
 xdata uint8_t buf1[512];
+uint8_t code LCD_str_start[]="Starting...";
 
 main()
 {
-   uint8_t input_value, error_flag;
+   uint8_t error_flag;
    uint16_t entry_num;
    uint32_t cwd, clus;
 
@@ -27,6 +36,7 @@ main()
 
 
    LCD_Init();
+   LCD_Print(0x00, sizeof(LCD_str_start)-1, LCD_str_start);
 
    error_flag=SPI_Master_Init(400000UL);
    if(error_flag!=no_errors)

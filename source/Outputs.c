@@ -78,10 +78,10 @@ CAUTION: Only uncomment the functions that are to be used
   P1|=Bit_Data;
 } */
 
- void P2_set_bit(uint8_t Bit_Data)
-{
-  P2|=Bit_Data;
-}
+//  void P2_set_bit(uint8_t Bit_Data)
+// {
+//   P2|=Bit_Data;
+// }
 
 void P3_set_bit(uint8_t Bit_Data)
 {

@@ -1,0 +1,139 @@
+C51 COMPILER V6.02  SD_CARD_TEST                                                           11/08/2019 16:55:08 PAGE 1   
+
+
+C51 COMPILER V6.02, COMPILATION OF MODULE SD_CARD_TEST
+OBJECT MODULE PLACED IN .\SD_card_test.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\source\SD_card_test.c DEBUG OBJECTEXTEND PRINT(.\SD_card_test.lst) OBJEC
+                    -T(.\SD_card_test.obj) 
+
+stmt level    source
+
+   1          #include "AT89C51RC2.h"
+   2          #include "stdio.h"
+   3          #include "main.h"
+   4          #include "PORT.H"
+   5          #include "UART.h"
+   6          #include "print_bytes.h"
+   7          #include "SPI.h"
+   8          #include "SDcard.h"
+   9          #include "Long_Serial_In.h"
+  10          #include "memory_test.h"
+*** ERROR 318 IN LINE 10 OF ..\source\SD_card_test.c: can't open file 'memory_test.h'
+  11          #include "LCD_routines.h"
+  12          #include "hardware_delay.h"
+*** ERROR 318 IN LINE 12 OF ..\source\SD_card_test.c: can't open file 'hardware_delay.h'
+  13          #include "Outputs.h"
+  14          #include "LED_Control.h"
+  15          
+  16          
+  17          uint8_t code SD_start[]="SD Card Init...";
+  18          uint8_t code SDSC[]="Std. Capacity";
+  19          uint8_t code SDHC[]="High Capacity";
+  20          
+  21          xdata uint8_t buf1[512];
+  22          //xdata uint8_t buf2[512];
+  23          
+  24          
+  25          main()
+  26          {
+  27   1         uint32_t block_num, LBA;
+  28   1         uint16_t i;
+  29   1         uint8_t error_flag;
+  30   1         uint8_t SD_stat;
+  31   1        
+  32   1         AUXR=0x0c;   // make all of XRAM available, ALE always on
+  33   1         if(OSC_PER_INST==6)  // sets the x2 bit according to the OSC_PER_INST value
+  34   1         {
+  35   2             CKCON0=0x01;  // set X2 clock mode
+  36   2         }
+  37   1         else if(OSC_PER_INST==12)
+  38   1         {
+  39   2             CKCON0=0x00;  // set standard clock mode
+  40   2         }
+  41   1         
+  42   1         P2_set_bit(0x0F);  // sets lower four bits of port 2 for switch inputs.
+  43   1         LEDS_OFF(Amber_LED|Yellow_LED|Green_LED);
+  44   1         LEDS_ON(Red_LED);
+  45   1         i=0;
+  46   1         while(i<=60000) i++;
+  47   1         LEDS_OFF(Red_LED);
+  48   1         uart_init(9600);
+  49   1         LCD_Init();
+  50   1           
+  51   1      
+  52   1         printf("SD Card Test Program\n\r\n\n");
+C51 COMPILER V6.02  SD_CARD_TEST                                                           11/08/2019 16:55:08 PAGE 2   
+
+  53   1         LCD_Print(line1,0,SD_start);   
+  54   1         error_flag=SPI_Master_Init(400000UL);
+  55   1         if(error_flag!=no_errors)
+  56   1         {
+  57   2            LEDS_ON(Red_LED);  // An error causes the program to stop
+  58   2      	  UART_Transmit('S');
+  59   2            while(1);
+  60   2         }
+  61   1         LEDS_ON(Amber_LED);
+  62   1         // SD Card Initialization
+  63   1         error_flag=SD_card_init();
+  64   1         if(error_flag!=no_errors)
+  65   1         {
+  66   2            LEDS_ON(Red_LED);  // An error causes the program to stop
+  67   2      	  UART_Transmit('C');
+  68   2            while(1);
+  69   2         }
+  70   1         LEDS_OFF(Amber_LED);
+  71   1         error_flag=SPI_Master_Init(20000000UL);
+  72   1         if(error_flag!=no_errors)
+  73   1         {
+  74   2            LEDS_ON(Red_LED);  // An error causes the program to stop
+  75   2      	  UART_Transmit('P');
+  76   2            while(1);
+  77   2         }
+  78   1         for(i=0;i<512;i++)
+  79   1         {
+  80   2            buf1[i]=0xff;  // erase valout for debug
+*** ERROR C213 IN LINE 80 OF ..\SOURCE\SD_CARD_TEST.C: left side of asn-op not an lvalue
+  81   2      //      buf2[i]=0xff;
+  82   2         }
+  83   1         SD_stat=Return_SD_Card_Type();
+  84   1         if(SD_stat==Standard_Capacity)
+  85   1         {
+  86   2            LCD_Print(line2,0,SDSC);
+  87   2         }
+  88   1         else if(SD_stat==High_Capacity)
+  89   1         {
+  90   2            LCD_Print(line2,0,SDHC);
+  91   2         }
+  92   1      // Main Loop
+  93   1      
+  94   1         while(1)
+  95   1         {
+  96   2            printf("Input Block#: ");
+  97   2            block_num=long_serial_input();
+  98   2            LBA=block_num<<SD_stat;
+  99   2      	  LEDS_ON(Green_LED);
+ 100   2      	  SPI_Select_Clear(SD_Card_Select);
+ 101   2            error_flag=SEND_COMMAND(CMD17,LBA);
+ 102   2            if(error_flag!=no_errors)
+ 103   2            {
+ 104   3               LEDS_ON(Red_LED);  // An error causes the program to stop
+ 105   3               while(1);
+ 106   3            }
+ 107   2            error_flag=read_block(512,buf1);
+ 108   2      	  LEDS_OFF(Green_LED);
+ 109   2      	  SPI_Select_Set(SD_Card_Select);
+ 110   2            if(error_flag!=no_errors)
+ 111   2            {
+ 112   3               LEDS_ON(Red_LED);  // An error causes the program to stop
+ 113   3               while(1);
+C51 COMPILER V6.02  SD_CARD_TEST                                                           11/08/2019 16:55:08 PAGE 3   
+
+ 114   3            }
+ 115   2            print_memory(buf1,512);
+ 116   2         }
+ 117   1      } 
+ 118          
+ 119          
+ 120          
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  3 ERROR(S)

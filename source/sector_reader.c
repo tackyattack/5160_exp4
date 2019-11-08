@@ -3,14 +3,14 @@
 #include "PORT.h"
 #include "sector_reader.h"
 
-uint8_t Read_Sector(uint32_t sector_number, uint16_t scetor_size, uint8_t *data_array)
+uint8_t Read_Sector(uint32_t sector_number, uint16_t sector_size, uint8_t *data_array)
 {
   uint8_t SD_type, error_flag;
   SD_type = Return_SD_Card_Type();
-  nCS=0;
+  nCS0=0;
   error_flag = SEND_COMMAND(17, (sector_number<<SD_type));
   if(error_flag == no_errors) read_block(sector_size, data_array);
-  nCS=1;
+  nCS0=1;
 
   if(error_flag != no_errors) return SECTOR_READ_FAIL;
   return SECTOR_READ_SUCCESS;
@@ -30,7 +30,7 @@ uint16_t read16(uint16_t offset, uint8_t *data_array)
   offset = offset & 0x1FF; // mask off for safety
   ret_val = 0;
   ret_val = data_array[offset + 1];              // MSB
-  ret_val = return_val << 8;                     // shift to correct spot
+  ret_val = ret_val << 8;                     // shift to correct spot
   ret_val = ret_val | data_array[offset];        // LSB
   return ret_val;
 }
