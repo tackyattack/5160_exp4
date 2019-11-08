@@ -10,5 +10,6 @@
 
 // ------ Public function prototypes -------------------------------
 uint8_t mount_drive(uint8_t xdata *xram_data_array);
+void print_file(uint32_t cluster_num, uint8_t xdata *xram_data_array);
 
 #endif

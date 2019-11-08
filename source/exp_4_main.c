@@ -2,12 +2,15 @@
 #include "main.h"
 #include "PORT.H"
 #include "Directory_Functions_struct.h"
+#include "file_system.h"
 
 xdata uint8_t buf1[512];
 
 main()
 {
    uint8_t input_value, error_flag;
+   uint16_t entry_num;
+   uint32_t cwd, clus;
 
    LEDS_ON(Red_LED);
    AUXR=0x0c;   // make all of XRAM available, ALE always on
@@ -62,12 +65,30 @@ main()
    }
 
    printf("Root directory:\n\n");
-   Print_Directory(Export_Drive_values()->FirstRootDirSec, buf1);
+   cwd = Print_Directory(Export_Drive_values()->FirstRootDirSec, buf1);
 
 
    while(1)
    {
-     input_value=UART_Receive();
-     UART_Transmit(input_value);
+     printf("Enter an entry number: ");
+     entry_num = (uint16_t)long_serial_input();
+     // check to make sure entry is within the cwd
+     if(entry_num <= Print_Directory(cwd, buf1))
+     {
+       clus = Read_Dir_Entry(cwd, entry_num, buf1);
+       if(clus & directory_bit)
+       {
+         clus &= 0x0FFFFFFF; // mask off upper four bits to print another directory
+         cwd = first_sector(clus);
+       }
+       else
+       {
+         print_file(clus, buf1);
+       }
+     }
+     else
+     {
+       printf("Error: invalid entry choice\n");
+     }
    }
 }

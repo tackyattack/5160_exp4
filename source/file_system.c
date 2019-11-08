@@ -17,6 +17,8 @@
 #define BPB_RootClus_offset             (0x002C)
 
 
+
+
 uint8_t mount_drive(uint8_t xdata *xram_data_array)
 {
   uint8_t temp8, NumFAT;
@@ -73,8 +75,6 @@ uint8_t mount_drive(uint8_t xdata *xram_data_array)
   FATSz16     = read16(BPB_FATsize16_offset, data_array);
   FATSz32     = read32(BPB_FATsize32_offset, data_array);
   RootClus    = read32(BPB_RootClus_offset, data_array);
-
-
 
 
   if(FATSz16 != 0)
@@ -191,4 +191,45 @@ uint32_t find_next_clus(uint32_t cluster_num, uint8_t xdata *xram_data_array)
 
   printf("Error: couldn't find next cluster\n");
   return 0;
+}
+
+
+void print_file(uint32_t cluster_num, uint8_t xdata *xram_data_array)
+{
+   uint32_t base_sector, sector_offset;
+   uint8_t temp8;
+   uint8_t *data_array;
+   FS_values_t *drive_values = Export_Drive_values();
+   data_array = xram_data_array; // cast xdata to uint8_t since all other functions don't use xdata
+
+   sector_offset = 0; // start at first sector
+
+   printf(" **** Opening File ****\n");
+   printf("Press 'e' to exit\n");
+
+   do
+   {
+      // check if we need to find the first sector of the cluster
+      if(sector_offset == 0) base_sector = first_sector(cluster_num);
+
+      // read the sector in
+      Read_Sector((base_sector+sector_offset), drive_values->BytesPerSec, data_array);
+      print_memory(drive_values->BytesPerSec, data_array);
+
+      sector_offset++; // go forward one sector
+
+      // check if we need to go to the next cluster
+      if(sector_offset == drive_values->BytesPerSec)
+      {
+        clus = find_next_clus(clus, data_array);
+        sector_offset = 0;
+      }
+
+      // wait for user to choose an action
+      do
+      {
+        temp8 = getchar();
+      }while((temp8!='e') && (temp8!='n'));
+
+   }while(temp8 == 'e');
 }
