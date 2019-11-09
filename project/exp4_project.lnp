@@ -1,15 +1,15 @@
-".\Directory_Functions_struct.obj",
 ".\exp_4_main.obj",
-".\file_system.obj",
 ".\LCD_hardware_functions.obj",
 ".\LCD_routines.obj",
 ".\LED_Control.obj",
-".\Long_Serial_In.obj",
 ".\Outputs.obj",
-".\print_bytes.obj",
-".\SDCard.obj",
 ".\sector_reader.obj",
 ".\SPI.obj",
 ".\Timer0_hardware_delay_1ms.obj",
-".\UART.obj" 
+".\UART.obj",
+".\SDCard.obj",
+".\Directory_Functions_struct.obj",
+".\file_system.obj",
+".\print_bytes.obj",
+".\Long_Serial_In.obj" 
 TO "exp4_project" 
